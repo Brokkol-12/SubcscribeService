@@ -3,8 +3,8 @@ A service for create, read, update and delete subscription on your platform
 
 --Instalation
 Clone the repository:
-git clone https://github.com/brokkol-12/subscription-service.git
-cd subscription-service
+git clone https://github.com/Brokkol-12/SubcscribeService.git
+cd SubcscribeService
 
 --Environment Setup
 Before launching the application, create a .env file in the root directory.
