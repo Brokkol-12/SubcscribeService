@@ -16,6 +16,7 @@ func Init(level string) *slog.Logger {
 
 	case "error":
 		lvl = slog.LevelError
+
 	default:
 		lvl = slog.LevelInfo
 
