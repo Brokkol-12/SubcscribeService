@@ -55,10 +55,10 @@ curl -X 'POST' \
   -H 'accept: application/json' \  
   -H 'Content-Type: application/json' \  
   -d '{  
-  "end_date": "MM-YYYY",  
+  "end_date": "YYYY-MM-DD",  
   "price": 0,  
   "service_name": "string",  
-  "start_date": "MM-YYYY",  
+  "start_date": "YYYY-MM-DD",  
   "user_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  
 }  
 
