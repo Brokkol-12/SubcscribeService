@@ -39,6 +39,14 @@ go mod tidy
 И запустите программу:  
 go run cmd/main.go  
 
+--Swagger  
+После старта у вас будет доступ к документации SWAGGER  
+Откройте Ваш браузер и вбейте в поисковую строку:   
+http://localhost:8081/swagger/index.html  
+Тут вы получите параметры по которым работает API.  
+Так же, в самом Swagger возможно проводить тестирование, после раскрытия вкладки с интересующим Вас сервисом, есть подпункт - "Parameters Try it out",  
+где система сама подскажет какие и куда данные вводить, а так же выдаст результат
+
 --Тестирование API  
 Примеры запросов:  
 Create Subscription  
@@ -95,11 +103,7 @@ curl -X 'GET' \
   'http://localhost:8081/subs/total?user_id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx&start=YYYY-MM-DD&end=YYYY-MM-DD' \  
   -H 'accept: application/json'  
  
---Swagger  
-После старта у вас будет доступ к документации SWAGGER  
-Откройте Ваш браузер и вбейте в поисковую строку:   
-http://localhost:8081/swagger/index.html  
-Тут вы получите параметры по которым работает API.  
+
 
 --API документация  
 
