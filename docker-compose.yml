@@ -10,10 +10,11 @@ services:
     volumes:
       - postgres-data:/data/postgres
       - ./internal/db/subs_table.sql:/docker_entrypoint-initdb.d/init.sql
-    ports: "5432:5432"
+    ports:
+      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U user -d postgres" ]
-      interval: 5
+      interval: 5s
       timeout: 5s
       retries: 5
 
@@ -23,7 +24,7 @@ services:
     env_file:
       - .env.example
     depends_on:
-      - db:
+      db:
         condition: service_healthy
     ports:
       - "8081:8081"
