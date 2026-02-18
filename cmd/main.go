@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"subscription-service/configs"
 	_ "subscription-service/docs"
 	"subscription-service/internal/db"
@@ -12,6 +15,7 @@ import (
 	"subscription-service/internal/repository"
 	"subscription-service/internal/services"
 	"subscription-service/pkg/health"
+	"syscall"
 	"time"
 
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -35,7 +39,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
-	defer pool.Close()
 
 	router := http.NewServeMux()
 	//Repositories
@@ -60,8 +63,24 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
-	log.Printf("Sever is started on port %s", conf.App.Port)
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+	go func() {
+		log.Printf("Server started on port %s", conf.App.Port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("server error: %v", err)
+		}
+	}()
+	//graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	log.Println("Shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
+	defer pool.Close()
+	log.Println("Server exited properly")
 }

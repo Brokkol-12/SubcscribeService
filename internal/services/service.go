@@ -12,10 +12,10 @@ import (
 )
 
 type SubsService struct {
-	repo *repository.SubscriptionRepository
+	repo ISubsServiceRepo
 }
 
-func NewSubsService(repo *repository.SubscriptionRepository) *SubsService {
+func NewSubsService(repo ISubsServiceRepo) *SubsService {
 	return &SubsService{
 		repo: repo,
 	}
@@ -83,7 +83,11 @@ func (s *SubsService) Update(ctx context.Context,
 		Price:       price,
 		EndDate:     endDate,
 	}
+
 	err := s.repo.Update(ctx, subs)
+	if errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
 	if err != nil {
 		return nil, fmt.Errorf("Failed to update subscription: %w", err)
 	}
@@ -101,26 +105,26 @@ func (s *SubsService) GetByID(ctx context.Context, id uuid.UUID) (*models.Subscr
 
 func (s *SubsService) List(
 	ctx context.Context,
-	userID uuid.UUID,
+	id uuid.UUID,
 	serviceName string,
 ) ([]models.Subscription, error) {
 
-	if userID == uuid.Nil {
+	if id == uuid.Nil {
 		return nil, errors.New("invalid user id")
 	}
 
-	return s.repo.List(ctx, userID, serviceName)
+	return s.repo.List(ctx, id, serviceName)
 }
 
 func (s *SubsService) CalculateTotal(
 	ctx context.Context,
-	userID uuid.UUID,
+	id uuid.UUID,
 	serviceName string,
 	start time.Time,
 	end time.Time,
 ) (uint, error) {
 
-	if userID == uuid.Nil {
+	if id == uuid.Nil {
 		return 0, errors.New("invalid user id")
 	}
 
@@ -128,5 +132,5 @@ func (s *SubsService) CalculateTotal(
 		return 0, errors.New("start date must be before end date")
 	}
 
-	return s.repo.CalculateTotal(ctx, userID, serviceName, start, end)
+	return s.repo.CalculateTotal(ctx, id, serviceName, start, end)
 }

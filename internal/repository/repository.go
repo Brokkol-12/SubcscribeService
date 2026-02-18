@@ -22,12 +22,21 @@ func NewSubsRepo(db *pgxpool.Pool) *SubscriptionRepository {
 }
 
 func (r *SubscriptionRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	_, err := r.db.Exec(
+	cmd, err := r.db.Exec(
 		ctx,
 		"DELETE FROM subscriptions WHERE id=$1",
 		id,
 	)
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *SubscriptionRepository) Create(ctx context.Context, subs *models.Subscription) error {
@@ -55,7 +64,7 @@ SET service_name = $1,
     end_date = $3,
     updated_at = NOW()
 WHERE id = $4
-RETURNING id, service_name, price, user_id, start_date, end_date, created_at, updated_at)`
+RETURNING id, service_name, price, user_id, start_date, end_date, created_at, updated_at`
 
 	return r.db.QueryRow(ctx, query,
 		subs.ServiceName,
@@ -161,28 +170,101 @@ func (r *SubscriptionRepository) CalculateTotal(
 ) (uint, error) {
 
 	query := `
-	SELECT COALESCE(SUM(price), 0)
+	SELECT id, service_name, price, user_id, start_date, end_date, created_at, updated_at
 	FROM subscriptions
 	WHERE user_id = $1
-	  AND service_name = $2
+	  AND ($2 = '' OR service_name = $2)
 	  AND start_date <= $3
 	  AND (end_date IS NULL OR end_date >= $4)
 	`
 
-	var total uint
-
-	err := r.db.QueryRow(
-		ctx,
-		query,
-		userID,
-		serviceName,
-		end,
-		start,
-	).Scan(&total)
-
+	rows, err := r.db.Query(ctx, query, userID, serviceName, end, start)
 	if err != nil {
 		return 0, err
 	}
+	defer rows.Close()
 
-	return total, nil
+	var subs []models.Subscription
+
+	for rows.Next() {
+		var s models.Subscription
+		if err := rows.Scan(
+			&s.ID,
+			&s.ServiceName,
+			&s.Price,
+			&s.UserId,
+			&s.StartDate,
+			&s.EndDate,
+			&s.CreatedAt,
+			&s.UpdatedAt,
+		); err != nil {
+			return 0, err
+		}
+		subs = append(subs, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+
+	return r.calculateInGo(subs, start, end), nil
+}
+
+func (r *SubscriptionRepository) calculateInGo(
+	subs []models.Subscription,
+	start time.Time,
+	end time.Time,
+) uint {
+
+	var total uint
+
+	for _, sub := range subs {
+
+		effectiveStart := maxTime(sub.StartDate, start)
+
+		effectiveEnd := end
+		if sub.EndDate != nil {
+			effectiveEnd = minTime(*sub.EndDate, end)
+		}
+
+		if effectiveStart.After(effectiveEnd) {
+			continue
+		}
+
+		months := monthsBetween(effectiveStart, effectiveEnd)
+		total += uint(months) * sub.Price
+	}
+
+	return total
+}
+
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
+func minTime(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
+	}
+	return b
+}
+
+func monthsBetween(start, end time.Time) int {
+	years := end.Year() - start.Year()
+	months := int(end.Month()) - int(start.Month())
+
+	total := years*12 + months
+
+	if end.Day() >= start.Day() {
+		total++
+	}
+
+	if total < 0 {
+		return 0
+	}
+
+	return total
 }

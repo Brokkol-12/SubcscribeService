@@ -135,6 +135,43 @@ paths:
       summary: Get subscription by ID
       tags:
       - subscriptions
+  /subs/list:
+    get:
+      description: List a subscription by its ID
+      parameters:
+      - description: User ID (UUID)
+        in: query
+        name: user_id
+        required: true
+        type: string
+      - description: Filter by service name
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Subscription'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List subscription by ID
+      tags:
+      - subscriptions
   /subs/total:
     get:
       description: Calculate total cost of subscriptions for a period with optional
@@ -190,10 +227,10 @@ paths:
       description: Update an exsisting subscription record
       parameters:
       - description: subscription ID (UUID)
-        in: path
+        in: query
         name: id
         required: true
-        type: integer
+        type: string
       - description: subscription update data
         in: body
         name: subscription
@@ -206,9 +243,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.Subscription'
-            type: array
+            $ref: '#/definitions/models.Subscription'
         "400":
           description: Bad Request
           schema:

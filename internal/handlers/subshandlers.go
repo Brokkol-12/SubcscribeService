@@ -13,10 +13,10 @@ import (
 )
 
 type SubsHandler struct {
-	service *services.SubsService
+	service ISubsServiceHandler
 }
 
-func RegisterSubsRoutes(mux *http.ServeMux, service *services.SubsService) {
+func RegisterSubsRoutes(mux *http.ServeMux, service ISubsServiceHandler) {
 	h := &SubsHandler{service: service}
 
 	mux.HandleFunc("/subs/create", h.Create())
@@ -67,7 +67,7 @@ func (h *SubsHandler) Create() http.HandlerFunc {
 			return
 		}
 
-		startDate, err := time.Parse("01-2006", body.StartDate)
+		startDate, err := time.Parse("01-2006-02", body.StartDate)
 		if err != nil {
 			log.Printf("Create: invalid data type, id=%s", startDate)
 			http.Error(w, "use MM-YYYY", http.StatusBadRequest)
@@ -76,7 +76,7 @@ func (h *SubsHandler) Create() http.HandlerFunc {
 
 		var endDate *time.Time
 		if body.EndDate != "" {
-			t, err := time.Parse("01-2006", body.EndDate)
+			t, err := time.Parse("01-2006-02", body.EndDate)
 			if err != nil {
 				log.Printf("Create: invalid data type, id=%s", endDate)
 				http.Error(w, "use MM-YYYY", http.StatusBadRequest)
@@ -142,7 +142,7 @@ func (h *SubsHandler) GetByID() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(subs)
 	}
 }
@@ -159,9 +159,9 @@ type UpdateSubsReq struct {
 // @Tags subscriptions
 // @Accept json
 // @Produce json
-// @Param id path int true "subscription ID (UUID)"
+// @Param id query string true "subscription ID (UUID)"
 // @Param subscription body CreateSubsReq true "subscription update data"
-// @Success 200 {array} models.Subscription
+// @Success 200 {object} models.Subscription
 // @Failure 404 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -188,7 +188,7 @@ func (h *SubsHandler) Update() http.HandlerFunc {
 
 		var endDate *time.Time
 		if req.EndDate != "" {
-			t, err := time.Parse(time.RFC3339, req.EndDate)
+			t, err := time.Parse("2006-01-02", req.EndDate)
 			if err != nil {
 				log.Printf("Update: Incalid date type, date=%s", endDate)
 				http.Error(w, "invalid date", http.StatusBadRequest)
@@ -205,13 +205,17 @@ func (h *SubsHandler) Update() http.HandlerFunc {
 			endDate,
 		)
 		if err != nil {
-			log.Printf("Update: internal error not found, id=%s: %v", userID, err)
+			if errors.Is(err, services.ErrNotFound) {
+				http.Error(w, "invalid id", http.StatusNotFound)
+				return
+			}
+			log.Printf("Update: internal error not found, id=%s, %v", userID, err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(subs)
 	}
 }
@@ -265,7 +269,6 @@ func (h *SubsHandler) Delete() http.HandlerFunc {
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /subs/list [get]
-
 func (h *SubsHandler) List() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -297,7 +300,7 @@ func (h *SubsHandler) List() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(subs)
 	}
 }
@@ -331,14 +334,14 @@ func (h *SubsHandler) CalculateTotal() http.HandlerFunc {
 
 		startDate, err := time.Parse("2006-01-02", r.URL.Query().Get("start"))
 		if err != nil {
-			log.Printf("CalculateTotal: invalid start date, id=%s", startDate)
+			log.Printf("CalculateTotal: invalid start date, id=%v", startDate)
 			http.Error(w, "use YYYY-MM-DD", http.StatusBadRequest)
 			return
 		}
 
 		endDate, err := time.Parse("2006-01-02", r.URL.Query().Get("end"))
 		if err != nil {
-			log.Printf("CalculateTotal: invalid start date, id=%s", endDate)
+			log.Printf("CalculateTotal: invalid end date, id=%v", endDate)
 			http.Error(w, "use YYYY-MM-DD", http.StatusBadRequest)
 			return
 		}

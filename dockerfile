@@ -23,4 +23,4 @@ USER appuser
 
 EXPOSE 8081
 
-CMD ["./cmd"]
+CMD ["./app"]
