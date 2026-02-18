@@ -4,8 +4,8 @@ REST сервис для агреации данных об онлайн-под�
 --Установка  
 Клонируйте репозиторий командами в cmd:  
 
-git clone https://github.com/Brokkol-12/SubcscribeService.git  
-cd SubcscribeService  
+git clone https://github.com/Brokkol-12/SubscribeService.git  
+cd SubscribeService  
 
 --Настройка окружения  
 Прежде чем запускать программу, создайте .env файл в корневой директории.  
