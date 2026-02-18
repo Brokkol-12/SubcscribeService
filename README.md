@@ -112,7 +112,8 @@ Create subscription
 Get subscription by ID  
 Get all subscriptions  
 Update subscription  
-Delete subscription  
+Delete subscription
+List subscription
 Get a total sum on all subscription  
 
 --Tech Stack  
