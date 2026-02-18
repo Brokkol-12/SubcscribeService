@@ -67,19 +67,19 @@ func (h *SubsHandler) Create() http.HandlerFunc {
 			return
 		}
 
-		startDate, err := time.Parse("01-2006-02", body.StartDate)
+		startDate, err := time.Parse("2006-01-02", body.StartDate)
 		if err != nil {
 			log.Printf("Create: invalid data type, id=%s", startDate)
-			http.Error(w, "use MM-YYYY", http.StatusBadRequest)
+			http.Error(w, "use YYYY-MM-DD", http.StatusBadRequest)
 			return
 		}
 
 		var endDate *time.Time
 		if body.EndDate != "" {
-			t, err := time.Parse("01-2006-02", body.EndDate)
+			t, err := time.Parse("2006-01-02", body.EndDate)
 			if err != nil {
 				log.Printf("Create: invalid data type, id=%s", endDate)
-				http.Error(w, "use MM-YYYY", http.StatusBadRequest)
+				http.Error(w, "use YYYY-MM-DD", http.StatusBadRequest)
 				return
 			}
 			endDate = &t
