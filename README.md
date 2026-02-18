@@ -23,7 +23,7 @@ DB_PASSWORD=your_db_password
 
 Соберите и запустите контейнер:  
 
-docker compose up --build  
+docker-compose up --build  
 
 После запуска, серис будет доступен по адресу:  
 http://localhost:8081  
